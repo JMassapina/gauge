@@ -51,7 +51,7 @@ type lastRunInfo struct {
 	Args           []string
 	failedItemsMap map[string]map[string]bool
 	FailedItems    []string
-	Items          []string
+	Command        []string
 }
 
 func (m *lastRunInfo) failedArgs() []string {
@@ -59,7 +59,7 @@ func (m *lastRunInfo) failedArgs() []string {
 }
 
 func (m *lastRunInfo) lastRunArgs() []string {
-	return append(m.Args, m.Items...)
+	return m.Command
 }
 
 func (m *lastRunInfo) getFailedItems() []string {
@@ -179,7 +179,6 @@ func GetLastState(repeat bool) ([]string, error) {
 }
 
 func SaveState(args []string, specs []string) {
-	runInfo.Items = specs
 	isPresent := func(values []string, value string) bool {
 		for _, v := range values {
 			if v == value {
@@ -188,8 +187,24 @@ func SaveState(args []string, specs []string) {
 		}
 		return false
 	}
+	runInfo.Args = []string{}
+	filteredArgs := []string{}
+	doNotAddFlags := []string{"--failed", "--repeat"}
+	doNotSaveCommand := []string{"--repeat"}
+	doNotSaveCommandFlag := false
 	for _, a := range args {
-		if !isPresent(specs, a) {
+		if isPresent(doNotSaveCommand,a){
+			doNotSaveCommandFlag = true
+		} else {
+			filteredArgs = append(filteredArgs,a)
+		}
+
+	}
+	if !doNotSaveCommandFlag {
+		runInfo.Command = filteredArgs
+	}
+	for _, a := range args {
+		if !isPresent(specs, a) && !isPresent(doNotAddFlags,a){
 			runInfo.Args = append(runInfo.Args, a)
 		}
 	}

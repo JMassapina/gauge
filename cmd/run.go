@@ -40,10 +40,16 @@ var (
 		Example: `  gauge run specs/
   gauge run --tags "login" -s -p specs/`,
 		Run: func(cmd *cobra.Command, args []string) {
+			if !repeat {saveLastRunInfo(args, os.Args) }
 			if err := config.SetProjectRoot(args); err != nil {
 				logger.Fatalf(err.Error())
 			}
-			if failed || repeat {
+			if failed {
+				oldArgs := loadLastState(cmd)
+				saveLastRunInfo(args, oldArgs)
+				return
+			}
+			if repeat {
 				loadLastState(cmd)
 				return
 			}
@@ -82,16 +88,18 @@ func init() {
 	runCmd.Flags().BoolVarP(&hideSuggestion, "hide-suggestion", "", false, "Prints a step implementation stub for every unimplemented step")
 }
 
-func loadLastState(cmd *cobra.Command) {
+func loadLastState(cmd *cobra.Command) []string {
 	lastState, err := rerun.GetLastState(repeat)
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 	logger.Infof("Executing => gauge %s\n", strings.Join(lastState, " "))
 	cmd.Parent().SetArgs(lastState)
+	oldArgs := os.Args
 	os.Args = append([]string{"gauge"}, lastState...)
 	resetFlags()
 	cmd.Execute()
+	return oldArgs
 }
 
 func resetFlags() {
@@ -107,7 +115,12 @@ func execute(args []string) {
 	if e := env.LoadEnv(environment); e != nil {
 		logger.Fatalf(e.Error())
 	}
-	exitCode := execution.ExecuteSpecs(specs)
+	execution.ExecuteSpecs(specs)
 	rerun.WriteLastRunInfo()
-	os.Exit(exitCode)
+}
+
+func saveLastRunInfo(args []string, oldArgs []string) {
+	specs := getSpecsDir(args)
+	rerun.SaveState(oldArgs[1:], specs)
+	rerun.WriteLastRunInfo()
 }

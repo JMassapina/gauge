@@ -33,6 +33,8 @@ import (
 	"github.com/getgauge/gauge/util"
 	"github.com/getgauge/gauge/validation"
 	"github.com/spf13/cobra"
+	"github.com/getgauge/gauge/execution/rerun"
+	"os"
 )
 
 var (
@@ -51,6 +53,8 @@ var (
 		},
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			rerun.SaveState(os.Args[1:], []string{})
+			rerun.WriteLastRunInfo()
 			skel.CreateSkelFilesIfRequired()
 			track.Init()
 			config.SetProjectRoot(args)

@@ -132,8 +132,8 @@ func (s *MySuite) TestCaptureLastRunInfo(c *C) {
 
 	SaveState([]string{`--tags="foo"`, `specs`}, []string{`specs`})
 
-	c.Assert(len(runInfo.Items), Equals, 1)
-	c.Assert(runInfo.Items[0], Equals, "specs")
+	c.Assert(len(runInfo.Command), Equals, 1)
+	c.Assert(runInfo.Command[0], Equals, "specs")
 	c.Assert(runInfo.Args[0], Equals, `--tags="foo"`)
 	os.RemoveAll(filepath.Join(config.ProjectRoot, dotGauge))
 }
